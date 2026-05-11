@@ -72,11 +72,18 @@ class TokenChipStrip(QWidget):
         self,
         tokens: Sequence[str],
         values: Sequence[Optional[float]],
+        vmin: Optional[float] = None,
+        vmax: Optional[float] = None,
     ) -> None:
         """Render one chip per token; values[i] is the scalar for tokens[i].
 
         ``values[i]`` may be ``None`` to render the chip in a neutral color
         (e.g. the first token, for which we have no preceding context).
+
+        ``vmin`` / ``vmax`` pin the color scale to an externally-supplied
+        range so multiple strips can be visually compared on the same scale.
+        When either is ``None``, the missing bound is derived from this
+        strip's own values, preserving single-strip behavior.
         """
         # Clear existing chips (keep the trailing stretch).
         while self._row.count() > 1:
@@ -86,8 +93,10 @@ class TokenChipStrip(QWidget):
                 w.deleteLater()
 
         numeric = [v for v in values if v is not None]
-        vmin = min(numeric) if numeric else 0.0
-        vmax = max(numeric) if numeric else 1.0
+        if vmin is None:
+            vmin = min(numeric) if numeric else 0.0
+        if vmax is None:
+            vmax = max(numeric) if numeric else 1.0
 
         for tok, val in zip(tokens, values):
             cell = QWidget()

@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import argparse
 import sys
+import warnings
 
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
 from model_viz.core import registry
 from model_viz.data.xor import XORDataset
+from model_viz.data.fce import try_load as try_load_fce
 from model_viz.adapters.transformer_adapter import TransformerAdapter
 from model_viz.adapters.mlp_adapter import MLPAdapter
 from model_viz.viz.main_window import MainWindow
@@ -26,6 +28,18 @@ from model_viz.viz.visualizers.perplexity_viz.viz import PerplexityVisualizer
 def _register_all() -> None:
     # Datasets
     registry.register_dataset(XORDataset())
+
+    # Optional: the Cambridge FCE corpus (licensed; installed via
+    # scripts/setup_fce.sh).  Absence is a warning, never a crash.
+    fce = try_load_fce()
+    if fce is not None:
+        registry.register_dataset(fce)
+    else:
+        warnings.warn(
+            "FCE dataset not installed; skipping registration. "
+            "Run scripts/setup_fce.sh to enable it.",
+            stacklevel=2,
+        )
 
     # Model factories
     registry.register_model_factory(

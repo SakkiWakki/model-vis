@@ -218,3 +218,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# External / licensed datasets symlinked under data/.  The symlink itself
+# AND any files inside the resolved target must never be tracked.
+data/fce-released-dataset
+data/fce-released-dataset/
+data/UD_English-ESL
+data/UD_English-ESL/
+
+# Experiment outputs (CSVs, plots, summaries)
+experiments/*/results/*
+!experiments/*/results/.gitkeep

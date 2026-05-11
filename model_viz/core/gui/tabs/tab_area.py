@@ -39,7 +39,12 @@ class TabArea(QWidget):
         # Refresh on global model updates, but coalesce to avoid UI overload.
         get_bus().model_updated.connect(self._on_model_updated)
 
-    def set_model(self, adapter: ModelAdapter) -> None:
+    def set_model(self, adapter: Optional[ModelAdapter]) -> None:
+        if adapter is None:
+            # Close every model tab — used during shutdown to release adapters.
+            for i in range(self._tabs.count() - 1, -1, -1):
+                self._close_tab(i)
+            return
         key = adapter.name
         tab = self._model_tabs.get(key)
         if tab is None:
@@ -55,7 +60,19 @@ class TabArea(QWidget):
     def add_visualization(self, layer: LayerLike, viz_cls: Type["VisualizerBase"]) -> None:
         tab = self.current_model_tab()
         if tab is None:
-            return
+            # Diagnostic: catch the silent-no-op case where the user clicks a
+            # visualizer but no tab is currently selected (e.g. stack still
+            # showing the EmptyState).  Falls back to the first model tab.
+            if self._model_tabs:
+                tab = next(iter(self._model_tabs.values()))
+                self._tabs.setCurrentWidget(tab)
+                self._stack.setCurrentWidget(self._tabs)
+            else:
+                print(
+                    f"[model_viz] No model tab to host {viz_cls.__name__} "
+                    f"for layer {layer.name!r}; load a model first."
+                )
+                return
         tab.add_visualization(layer, viz_cls)
 
     def refresh_all(self) -> None:

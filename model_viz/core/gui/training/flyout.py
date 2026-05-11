@@ -167,13 +167,18 @@ class TrainingFlyout(QWidget):
             self._set_enabled(False)
 
     # ------------------------------------------------------------------
-    def set_adapter(self, adapter: ModelAdapter) -> None:
+    def set_adapter(self, adapter: Optional[ModelAdapter]) -> None:
         self._adapter = adapter
         self._train_btn.setChecked(False)
         self._poll_timer.stop()
         # Controller needs the adapter even for non-trainable models so that
-        # probe_with() (one-shot inference) can run.
+        # probe_with() (one-shot inference) can run.  Passing None clears it.
         self._controller.set_adapter(adapter)
+        if adapter is None:
+            self._title.setText("")
+            self._set_enabled(False)
+            self._status.setText("")
+            return
         self._title.setText(f"<b>{adapter.name}</b>")
         self._rebuild_hparams()
         self._rebuild_io()

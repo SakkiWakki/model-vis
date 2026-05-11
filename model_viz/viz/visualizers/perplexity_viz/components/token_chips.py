@@ -1,6 +1,7 @@
 """Horizontal strip of token chips colored by per-token perplexity."""
 from __future__ import annotations
 
+import math
 from typing import List, Optional, Sequence, Tuple
 
 from PyQt6.QtCore import Qt
@@ -14,11 +15,22 @@ from PyQt6.QtWidgets import (
 
 
 def _color_for(value: float, vmin: float, vmax: float) -> Tuple[int, int, int]:
-    """Interpolate green -> yellow -> red across [vmin, vmax]."""
-    if vmax <= vmin:
+    """Interpolate green -> yellow -> red across [log(vmin), log(vmax)].
+
+    Perplexity is exp(NLL); the perceptually meaningful axis is therefore the
+    log of it.  Linear interpolation in perplexity space collapses everything
+    except the largest outlier to the green end whenever a sequence contains
+    even one highly-surprising token (and perplexity routinely spans many
+    orders of magnitude).  Log interpolation keeps downstream effects
+    (e.g. elevated perplexity on tokens following an error) visible.
+    """
+    # Guard against non-positive values and zero-width ranges.
+    if not (vmin > 0 and vmax > 0):
+        t = 0.0
+    elif vmax <= vmin:
         t = 0.0
     else:
-        t = (value - vmin) / (vmax - vmin)
+        t = (math.log(value) - math.log(vmin)) / (math.log(vmax) - math.log(vmin))
         t = max(0.0, min(1.0, t))
     # Green (60, 160, 90) -> Yellow (220, 180, 60) -> Red (200, 70, 70)
     if t < 0.5:

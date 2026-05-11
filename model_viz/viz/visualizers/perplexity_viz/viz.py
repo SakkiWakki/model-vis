@@ -131,12 +131,29 @@ class PerplexityVisualizer(VisualizerBase):
             self._status.setText("Empty sequence.")
             return
         self._strip.set_tokens(tokens, values)
-        finite = [v for v in values if v is not None and math.isfinite(v)]
-        if finite:
-            avg = sum(finite) / len(finite)
-            self._status.setText(f"{len(tokens)} tokens • mean perplexity {avg:.3f}")
-        else:
-            self._status.setText(f"{len(tokens)} tokens")
+        # Sequence-level perplexity is the geometric mean of per-token
+        # perplexity (equivalently exp of the mean NLL): one outlier no
+        # longer dominates an otherwise-confident sentence the way an
+        # arithmetic mean would.  This matches the standard definition of
+        # perplexity-of-a-sequence used in the language-modeling literature.
+        finite_nlls = [
+            math.log(v) for v in values
+            if v is not None and math.isfinite(v) and v > 0
+        ]
+        suffix_parts: List[str] = []
+        if finite_nlls:
+            geo_mean = math.exp(sum(finite_nlls) / len(finite_nlls))
+            suffix_parts.append(f"geom-mean perplexity {geo_mean:.3f}")
+        # Warn the user if the model truncated past its context window so
+        # the chips silently dropping tokens is at least surfaced.
+        n_displayed = len(tokens)
+        n_input = int(token_ids.shape[-1]) if token_ids.ndim >= 1 else n_displayed
+        if n_displayed < n_input:
+            suffix_parts.append(
+                f"showing {n_displayed}/{n_input} tokens (model truncated)"
+            )
+        head = f"{n_displayed} tokens"
+        self._status.setText(" • ".join([head] + suffix_parts) if suffix_parts else head)
 
     def _compute(
         self,

@@ -94,6 +94,41 @@ class LlamaCppAdapter:
         # Back-ref so visualizers can query adapter-level capabilities.
         self._output_leaf._adapter = self  # type: ignore[attr-defined]
 
+    def close(self) -> None:
+        """Explicitly release the underlying llama.cpp runtime.
+
+        Call this *before* the Python interpreter starts tearing down, so the
+        ``Llama`` instance's C++ destructor runs while libllama.so and the
+        CUDA context are still alive.  Letting it die at atexit is a known
+        segfault path on app exit.
+        """
+        llama = getattr(self, "_llama", None)
+        if llama is None:
+            return
+        # llama-cpp-python exposes close() in recent versions; fall back to
+        # dropping the reference and forcing a GC otherwise.
+        try:
+            if hasattr(llama, "close"):
+                llama.close()
+        except Exception:
+            pass
+        self._llama = None
+        # The dataset also holds a reference; clear it so nothing keeps the
+        # native runtime alive past this point.
+        if getattr(self, "_dataset", None) is not None:
+            try:
+                self._dataset._llama = None  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+    def __del__(self) -> None:
+        # Best-effort: at interpreter teardown the modules we depend on may
+        # already be partially torn down, so swallow anything that happens.
+        try:
+            self.close()
+        except Exception:
+            pass
+
     # ------------------------------------------------------------------
     # ModelAdapter
     # ------------------------------------------------------------------

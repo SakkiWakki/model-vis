@@ -105,8 +105,15 @@ class TrainingController(QObject):
         self.running_changed.emit(False)
 
     def shutdown(self) -> None:
-        """Stop training synchronously before Qt destroys this controller."""
-        self.stop(wait=False, timeout_ms=None)
+        """Stop training synchronously before Qt destroys this controller.
+
+        Must wait for the worker thread to finish — letting Qt tear down the
+        QThread while it's still running causes a segfault on app exit.
+        """
+        self.stop(wait=True, timeout_ms=5000)
+        # Drop the adapter reference so any backing native runtime (Llama,
+        # torch model) can be GC'd while the Qt event loop is still alive.
+        self._adapter = None
 
     def poll(self) -> None:
         if self._worker is None:

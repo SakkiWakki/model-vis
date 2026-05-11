@@ -36,8 +36,11 @@ class VizList(QWidget):
         # stale until the user re-selects the adapter.
         get_bus().model_updated.connect(self._on_model_updated)
 
-    def set_adapter(self, adapter: ModelAdapter) -> None:
-        """Set current model adapter and populate supported visualizers."""
+    def set_adapter(self, adapter: Optional[ModelAdapter]) -> None:
+        """Set current model adapter and populate supported visualizers.
+
+        Passing ``None`` clears the list — used during shutdown.
+        """
         self._adapter = adapter
         self._layer = None
         self._rescan_supported()

@@ -45,11 +45,14 @@ class VizPanel(QWidget):
             w = self._viz_cls(layer=layer, adapter=adapter)
         except Exception as e:
             w = QLabel(f"Failed to build viz: {e}")
-        # Keep each instance from growing arbitrarily wide; user can scroll horizontally.
+        # Reasonable lower bound so a viz isn't crushed when many share the row.
         w.setMinimumWidth(260)
 
-        # Insert before the stretch.
-        self._row.insertWidget(self._row.count() - 1, w)
+        # Insert before the trailing stretch with stretch=1 so each instance
+        # expands to fill available horizontal space.  Single-instance
+        # visualizers (Perplexity) then get the full panel width; multi-instance
+        # visualizers (Attention with several layers) share equally.
+        self._row.insertWidget(self._row.count() - 1, w, stretch=1)
         self._instances[key] = w
 
     def refresh_all(self, adapter: ModelAdapter) -> None:

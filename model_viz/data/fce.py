@@ -38,7 +38,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator, List, Optional, Tuple
+from typing import Any, Iterator, List, Optional
 from xml.etree import ElementTree as ET
 
 import torch
@@ -75,8 +75,14 @@ class FCEUnavailable(RuntimeError):
 class FCEDataset:
     """Read-only corpus of FCE learner-original / gold-corrected paragraph pairs.
 
-    Iteration is lazy: ``iter_pairs()`` yields one ``FCEPair`` at a time so
-    the full 1244-file corpus is never materialized in memory.
+    Implements ``InputCapable`` (for typing free-form text into a visualizer
+    using the dataset's whitespace fallback) and ``EvalCapable`` (for offline
+    iteration over the corpus).  Does **not** implement ``TrainCapable`` — the
+    training UI will simply not surface for this dataset.
+
+    Iteration is lazy: ``iter_pairs()`` / ``iter_examples()`` yields one
+    ``FCEPair`` at a time so the full 1244-file corpus is never materialized
+    in memory.
     """
 
     name = "fce"
@@ -137,10 +143,18 @@ class FCEDataset:
         return self.iter_pairs()
 
     # ------------------------------------------------------------------
-    # Dataset protocol — the bare minimum so this can be registered and
-    # selected in the sidebar without crashing.  The intended workflow is
-    # to load a model (e.g. GPT-2) whose adapter brings its own tokenizer;
-    # this class's tokenizer is a coarse whitespace fallback.
+    # EvalCapable
+    # ------------------------------------------------------------------
+
+    def iter_examples(self) -> Iterator[FCEPair]:
+        """``EvalCapable`` entrypoint.  Aliases :meth:`iter_pairs` for the protocol."""
+        return self.iter_pairs()
+
+    # ------------------------------------------------------------------
+    # InputCapable — bare-minimum plumbing so the dataset can be selected
+    # in the sidebar.  The intended workflow is to load a model (e.g. GPT-2)
+    # whose adapter brings its own tokenizer; this class's tokenizer is a
+    # coarse whitespace fallback.
     # ------------------------------------------------------------------
 
     def make_input(self, raw: Any) -> TextInput:
@@ -152,11 +166,6 @@ class FCEDataset:
         return TextInput(
             "Dear Sir, I am writing with reference to your article.",
             tokenizer=_whitespace_encode,
-        )
-
-    def batch(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        raise NotImplementedError(
-            "FCEDataset is inference-only and has no training batch."
         )
 
     def interpret_output(self, raw: Any) -> ClassLabelOutput:

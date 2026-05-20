@@ -24,7 +24,7 @@ from model_viz.core.adapter import HyperParamSpec
 from model_viz.core.input.base import InputBase
 from model_viz.core.input.text_input import TextInput
 from model_viz.core.module_adapter import ModuleAdapter, ModuleChildAdapter
-from model_viz.data.base import Dataset
+from model_viz.data.base import TrainableDataset
 from model_viz.models.transformer import TransformerConfig, build_transformer
 
 
@@ -41,7 +41,7 @@ class TransformerAdapter(ModuleAdapter):
     def __init__(
         self,
         name: str,
-        dataset: Dataset,
+        dataset: TrainableDataset,
         *,
         children: Optional[Dict[str, Any]] = None,
     ) -> None:

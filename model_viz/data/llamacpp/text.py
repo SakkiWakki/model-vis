@@ -1,13 +1,13 @@
 """LlamaCppTextDataset: free-form text input paired with a llama.cpp tokenizer.
 
 Mirrors HFTextDataset but uses the GGUF-embedded tokenizer exposed by
-``llama_cpp.Llama.tokenize`` / ``detokenize``.  No training corpus; ``batch``
-raises if called.  ``interpret_output`` reads the last position's logits and
-returns top-k next-token predictions.
+``llama_cpp.Llama.tokenize`` / ``detokenize``.  Implements ``InputCapable``
+only (no training corpus).  ``interpret_output`` reads the last position's
+logits and returns top-k next-token predictions.
 """
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any
 
 import torch
 
@@ -45,10 +45,6 @@ class LlamaCppTextDataset:
 
     def probe_input(self) -> TextInput:
         return TextInput("The quick brown fox", tokenizer=self._encode)
-
-    # ---- training (unsupported) ------------------------------------
-    def batch(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        raise NotImplementedError("LlamaCppTextDataset has no training corpus.")
 
     # ---- output ----------------------------------------------------
     def interpret_output(self, raw: Any) -> ClassLabelOutput:

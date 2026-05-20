@@ -9,7 +9,7 @@ import torch.nn as nn
 from model_viz.core.adapter import HyperParamSpec
 from model_viz.core.input.base import InputBase
 from model_viz.core.module_adapter import ModuleAdapter
-from model_viz.data.base import Dataset
+from model_viz.data.base import TrainableDataset
 from model_viz.models.mlp import MLPConfig, build_mlp
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ class MLPAdapter(ModuleAdapter):
     reuse its layer tree without redeclaring visualizations.
     """
 
-    def __init__(self, name: str, dataset: Dataset) -> None:
+    def __init__(self, name: str, dataset: TrainableDataset) -> None:
         self.name = name
         self._dataset = dataset
         self.accepted_inputs: Tuple[Type[InputBase], ...] = (dataset.input_type,)  # type: ignore[assignment]

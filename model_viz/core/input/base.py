@@ -7,7 +7,7 @@ import torch
 
 if TYPE_CHECKING:
     from PyQt6.QtWidgets import QWidget
-    from model_viz.data.base import Dataset
+    from model_viz.data.base import InputCapable
 
 
 @runtime_checkable
@@ -23,7 +23,7 @@ class InputBase(Protocol):
 
     @classmethod
     def editor_widget(
-        cls, dataset: "Dataset", parent: Optional["QWidget"] = None
+        cls, dataset: "InputCapable", parent: Optional["QWidget"] = None
     ) -> "InputEditor":
         """Return a widget for building instances of this input type."""
         ...

@@ -17,10 +17,12 @@ from PyQt6.QtWidgets import QApplication
 from model_viz.core import registry
 from model_viz.data.xor import XORDataset
 from model_viz.data.fce import try_load as try_load_fce
+from model_viz.data.contradiction import try_load as try_load_contradiction
 from model_viz.adapters.transformer_adapter import TransformerAdapter
 from model_viz.adapters.mlp_adapter import MLPAdapter
 from model_viz.viz.main_window import MainWindow
 from model_viz.viz.visualizers.attention_viz.viz import AttentionVisualizer
+from model_viz.viz.visualizers.contradiction_viz.viz import ContradictionVisualizer
 from model_viz.viz.visualizers.nn_flow_viz.viz import NNFlowVisualizer
 from model_viz.viz.visualizers.perplexity_viz.viz import PerplexityVisualizer
 
@@ -41,6 +43,13 @@ def _register_all() -> None:
             stacklevel=2,
         )
 
+    # Contradiction pairs — bundled with the repo, but registered lazily so a
+    # missing/edited file degrades to "ContradictionVisualizer falls back to
+    # reading the JSON directly" rather than crashing startup.
+    contradiction = try_load_contradiction()
+    if contradiction is not None:
+        registry.register_dataset(contradiction)
+
     # Model factories
     registry.register_model_factory(
         "Transformer",
@@ -55,6 +64,7 @@ def _register_all() -> None:
     registry.register_visualizer(AttentionVisualizer)
     registry.register_visualizer(NNFlowVisualizer)
     registry.register_visualizer(PerplexityVisualizer)
+    registry.register_visualizer(ContradictionVisualizer)
 
 
 def main(argv: list[str] | None = None) -> int:

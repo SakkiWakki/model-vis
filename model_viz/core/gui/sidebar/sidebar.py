@@ -9,7 +9,6 @@ from PyQt6.QtWidgets import QFrame, QPushButton, QSizePolicy, QVBoxLayout, QWidg
 from model_viz.core.adapter import ModelAdapter
 from model_viz.core import registry
 from model_viz.core.layer import LayerLike
-from model_viz.data.base import Dataset
 from model_viz.core.gui.sidebar.dataset_selector import DatasetSelector
 from model_viz.core.gui.sidebar.hf.loader_dialog import HFLoaderDialog
 from model_viz.core.gui.sidebar.hf.ollama_picker import OllamaPickerDialog
@@ -68,13 +67,16 @@ class Sidebar(QWidget):
         self.viz_list.viz_chosen.connect(self.visualizer_requested)
 
         self._selected_model_name: Optional[str] = None
-        self._selected_dataset: Optional[Dataset] = None
+        # Datasets are duck-typed via the capability protocols in
+        # ``data.base``; the sidebar itself doesn't care which capabilities
+        # are present, the chosen factory does the narrowing.
+        self._selected_dataset: Optional[object] = None
 
     def _on_model_selected(self, model_name: str) -> None:
         self._selected_model_name = model_name
         self._maybe_build_adapter()
 
-    def _on_dataset_selected(self, dataset: Dataset) -> None:
+    def _on_dataset_selected(self, dataset: object) -> None:
         self._selected_dataset = dataset
         self._maybe_build_adapter()
 

@@ -14,7 +14,7 @@ import torch
 
 from model_viz.core.input.text_input import TextInput
 from model_viz.core.output.class_label import ClassLabelOutput
-from model_viz.data.base import Dataset, DatasetInfo
+from model_viz.data.base import DatasetInfo
 
 
 IGNORE_INDEX = -100
@@ -39,7 +39,8 @@ class XORVocab:
         return torch.tensor([ids], dtype=torch.long)  # (B=1, S=2)
 
 
-class XORDataset(Dataset):
+class XORDataset:
+    # Implements InputCapable + TrainCapable.
     name = "xor"
     input_type = TextInput
     output_type = ClassLabelOutput

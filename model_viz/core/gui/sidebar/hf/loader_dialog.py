@@ -11,12 +11,13 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QProgressBar,
     QPushButton,
     QVBoxLayout,
     QWidget,
 )
+
+from model_viz.core.gui.sidebar.hf.recents import add_recent, load_recents
 
 
 class _LoadWorker(QThread):
@@ -55,8 +56,18 @@ class HFLoaderDialog(QDialog):
         layout.addWidget(QLabel("Model id (e.g. 'Qwen/Qwen2.5-0.5B-Instruct') or local directory:"))
 
         row = QHBoxLayout()
-        self._edit = QLineEdit()
-        self._edit.setPlaceholderText("Qwen/Qwen2.5-0.5B-Instruct")
+        # Editable combo: doubles as a free-form text field (when typing) and
+        # a recent-models dropdown (when clicking the arrow).  The blank first
+        # entry keeps the field empty on open so the placeholder shows and a
+        # recent isn't auto-loaded; users still see their history one click away.
+        self._edit = QComboBox()
+        self._edit.setEditable(True)
+        self._edit.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        line = self._edit.lineEdit()
+        if line is not None:
+            line.setPlaceholderText("Qwen/Qwen2.5-0.5B-Instruct")
+            line.setClearButtonEnabled(True)
+        self._populate_recents()
         row.addWidget(self._edit, stretch=1)
         self._browse = QPushButton("Browse…")
         self._browse.clicked.connect(self._on_browse)
@@ -93,13 +104,41 @@ class HFLoaderDialog(QDialog):
     def bundle(self):
         return self._bundle
 
+    def _populate_recents(self) -> None:
+        """Reload the combo from the persisted recents file.
+
+        A blank entry sits at index 0 so the dialog opens empty (placeholder
+        visible, nothing auto-selected).  Selecting a recent populates the
+        editable text field via Qt's default combo behavior.
+        """
+        self._edit.blockSignals(True)
+        self._edit.clear()
+        self._edit.addItem("")  # blank "no selection" row
+        for entry in load_recents():
+            self._edit.addItem(entry)
+        self._edit.setCurrentIndex(0)
+        line = self._edit.lineEdit()
+        if line is not None:
+            line.clear()
+        self._edit.blockSignals(False)
+
+    def _current_text(self) -> str:
+        line = self._edit.lineEdit()
+        if line is not None:
+            return line.text().strip()
+        return self._edit.currentText().strip()
+
     def _on_browse(self) -> None:
         path = QFileDialog.getExistingDirectory(self, "Pick a model directory")
         if path:
-            self._edit.setText(path)
+            line = self._edit.lineEdit()
+            if line is not None:
+                line.setText(path)
+            else:
+                self._edit.setCurrentText(path)
 
     def _on_load(self) -> None:
-        text = self._edit.text().strip()
+        text = self._current_text()
         if not text:
             self._status.setText("Enter a model id or path.")
             return
@@ -117,6 +156,10 @@ class HFLoaderDialog(QDialog):
 
     def _on_loaded(self, bundle: object) -> None:
         self._bundle = bundle
+        # Record the successfully-loaded entry so it shows up first in the
+        # dropdown next time.  Failures are not recorded — only working
+        # ids/paths earn a slot in the recents list.
+        add_recent(self._current_text())
         self.accept()
 
     def _on_failed(self, message: str) -> None:

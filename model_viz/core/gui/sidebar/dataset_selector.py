@@ -7,15 +7,16 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QWidget
 
 from model_viz.core import registry
-from model_viz.data.base import Dataset
 
 
 class DatasetSelector(QWidget):
-    dataset_selected = pyqtSignal(object)  # emits Dataset
+    # Emits an opaque dataset object; consumers narrow via the capability
+    # protocols in ``model_viz.data.base``.
+    dataset_selected = pyqtSignal(object)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        self._datasets: list[Dataset] = []
+        self._datasets: list[object] = []
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)

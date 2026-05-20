@@ -7,7 +7,7 @@ ClassLabelOutput, which the existing output renderer can display.
 """
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any
 
 import torch
 
@@ -44,10 +44,6 @@ class HFTextDataset:
 
     def probe_input(self) -> TextInput:
         return TextInput("The quick brown fox", tokenizer=self._encode)
-
-    # ---- training (unsupported) ------------------------------------
-    def batch(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        raise NotImplementedError("HFTextDataset has no training corpus.")
 
     # ---- output ----------------------------------------------------
     def interpret_output(self, raw: Any) -> ClassLabelOutput:

@@ -7,7 +7,7 @@ import torch
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QWidget
 
 if TYPE_CHECKING:
-    from model_viz.data.base import Dataset
+    from model_viz.data.base import InputCapable
 
 
 class TextInput:
@@ -32,7 +32,7 @@ class TextInput:
 
     @classmethod
     def editor_widget(
-        cls, dataset: "Dataset", parent: Optional[QWidget] = None
+        cls, dataset: "InputCapable", parent: Optional[QWidget] = None
     ) -> "TextInputEditor":
         return TextInputEditor(dataset=dataset, parent=parent)
 
@@ -40,7 +40,7 @@ class TextInput:
 class TextInputEditor(QWidget):
     """Single-line text editor that produces TextInput instances via the dataset."""
 
-    def __init__(self, dataset: "Dataset", parent: Optional[QWidget] = None) -> None:
+    def __init__(self, dataset: "InputCapable", parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._dataset = dataset
 
